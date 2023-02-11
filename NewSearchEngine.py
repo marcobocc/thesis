@@ -15,12 +15,12 @@ class NewSearchEngine:
 
     def search(self, query, include_synonyms=False, include_stopwords=False):
         sorted_search_results = self._search_with_score(query, include_synonyms, include_stopwords)
-        return [search_result["document"].upper() for search_result in sorted_search_results]
+        return sorted_search_results
 
     def _build_index(self, documents):
         index = {}
         for document in documents:
-            document_words = [word.lower() for word in re.findall(r'\w+', document["contents"])]
+            document_words = [word.lower() for word in re.findall(r'\w+', document["contents"]) + re.findall(r'\w+', document["identifier"])]
             for word in document_words:
                 stemmed_word = self.stemmer.stem(word)
                 if stemmed_word not in index:
@@ -88,7 +88,7 @@ class NewSearchEngine:
                 final_score += math.pow(tfidf, 2)
             final_score = math.sqrt(final_score)
             sorted_documents.append({
-                    "document" : documentIdentifier,
+                    "document" : documentIdentifier.upper(),
                     "score" : final_score
                 })
         sorted_documents.sort(key=lambda document: document["score"], reverse=True)
@@ -111,7 +111,7 @@ class NewSearchEngine:
     def _search_with_score(self, query, include_synonyms=False, include_stopwords=False):
         original_keywords = [word.lower() for word in re.findall(r'\w+', query)]
 
-        next_keywords = self._remove_stopwords(original_keywords) if include_stopwords else original_keywords
+        next_keywords = self._remove_stopwords(original_keywords) if not include_stopwords else original_keywords
         next_keywords = self._expand_keywords(next_keywords) if include_synonyms else next_keywords
 
         search_results = self._find_documents(next_keywords, self.index)

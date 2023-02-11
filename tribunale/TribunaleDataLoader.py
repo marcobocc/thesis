@@ -10,7 +10,7 @@ class TribunaleDataLoader:
             section_name = section["section"]
             section_documents = section["items"]
             for document in section_documents:
-                doc_title = section_name + "/" + document["title"]
+                doc_title = document["title"]
                 doc_paragraphs = document["paragraphs"]
                 doc_contents = ""
                 for paragraph in doc_paragraphs:
@@ -18,6 +18,7 @@ class TribunaleDataLoader:
                     doc_contents += paragraph_content + " "
                 doc_entry = {
                     "identifier" : doc_title,
+                    "section" : section_name,
                     "contents" : doc_contents
                 }
                 self.documents.append(doc_entry)
