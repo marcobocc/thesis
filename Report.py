@@ -26,65 +26,41 @@ class Report:
         self.summary.to_csv(self.save_path)
 
     def _summarize(self):
+        max_k = 15
         sum_columns = [
             "num_relevant_found",
             "num_documents_found",
-            "actual_relevants",
-            "num_relevant_in_top_positions",
-            "num_relevant_in_top_1",
-            "num_relevant_in_top_2",
-            "num_relevant_in_top_3",
-            "num_relevant_in_top_5",
-            "num_relevant_in_top_8",
-            "num_relevant_in_top_10",
-            "num_relevant_in_top_15"
+            "actual_relevants"
         ]
+        labels_num_relevants_at_top_k = [
+            "num_relevants_at_top_{}".format(k+1)
+            for k in range(max_k)
+        ]
+        sum_columns += labels_num_relevants_at_top_k
+
+        self.df = self.df.reset_index()
         stats = self.df.groupby(["test_name", "search_engine"])[sum_columns].sum().reset_index()
+        stats["count"] = self.df.groupby(["test_name", "search_engine"])["index"].transform("count")
         stats["recall"] = stats["num_relevant_found"] / stats["actual_relevants"]
         stats["precision"] = stats["num_relevant_found"] / stats["num_documents_found"]
         stats["f1_score"] = 2 * (stats["recall"] * stats["precision"] / (stats["recall"] + stats["precision"]))
 
-        # Out of all relevant documents retrieved, what is the % of them that occupies the top K positions
-        stats["perc_of_relevants_in_top_positions"] = stats["num_relevant_in_top_positions"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_1"] = stats["num_relevant_in_top_1"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_2"] = stats["num_relevant_in_top_2"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_3"] = stats["num_relevant_in_top_3"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_5"] = stats["num_relevant_in_top_5"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_8"] = stats["num_relevant_in_top_8"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_10"] = stats["num_relevant_in_top_10"] / stats["num_relevant_found"] * stats["recall"]
-        stats["perc_of_relevants_in_top_15"] = stats["num_relevant_in_top_15"] / stats["num_relevant_found"] * stats["recall"]
 
-        perc_columns = [
-            "perc_of_relevants_in_top_positions",
-            "perc_of_relevants_in_top_1",
-            "perc_of_relevants_in_top_2",
-            "perc_of_relevants_in_top_3",
-            "perc_of_relevants_in_top_5",
-            "perc_of_relevants_in_top_8",
-            "perc_of_relevants_in_top_10",
-            "perc_of_relevants_in_top_15"
+        labels_precision_at_top_k = [
+            "precision_at_top_{}".format(k+1)
+            for k in range(max_k)
         ]
 
-        # Percentage of top K positions that is filled with a relevant search result
-        mean_columns = [
-            "perc_of_top_positions_occupied_by_relevants",
-            "perc_of_top_1_occupied_by_relevants",
-            "perc_of_top_2_occupied_by_relevants",
-            "perc_of_top_3_occupied_by_relevants",
-            "perc_of_top_5_occupied_by_relevants",
-            "perc_of_top_8_occupied_by_relevants",
-            "perc_of_top_10_occupied_by_relevants",
-            "perc_of_top_15_occupied_by_relevants"
-        ]
+        mean_columns = labels_precision_at_top_k
 
         selected_columns = [
             "test_name",
             "search_engine",
             "recall",
             "precision",
-            "f1_score"] + sum_columns + perc_columns + mean_columns
+            "f1_score"] + sum_columns + mean_columns
 
         mean_stats = self.df.groupby(["test_name", "search_engine"])[mean_columns].mean().reset_index()
         return pd.concat([stats, mean_stats[mean_columns]], axis=1)[selected_columns].reset_index()
 
-
+Report("02-12-2023_17_09_16")

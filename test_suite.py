@@ -9,6 +9,7 @@ import matplotlib as mpl
 from datetime import datetime
 from nltk.corpus import stopwords
 import os
+import math
 
 class bcolors:
     GREEN = '\033[92m'
@@ -29,7 +30,31 @@ class TestSuite:
             "excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False),
             "excl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=True),
             "incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False),
-            "incl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=True)
+            "incl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=True),
+
+            "0.9_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.9),
+            "0.8_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.8),
+            "0.7_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.7),
+            "0.6_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.6),
+            "0.5_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.5),
+            "0.4_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.4),
+            "0.3_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.3),
+            "0.2_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.2),
+            "0.1_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.1),
+            "0.05_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.05),
+            "0.01_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.01),
+
+            "0.9_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.9),
+            "0.8_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.8),
+            "0.7_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.7),
+            "0.6_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.6),
+            "0.5_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.5),
+            "0.4_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.4),
+            "0.3_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.3),
+            "0.2_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.2),
+            "0.1_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.1),
+            "0.05_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.05),
+            "0.01_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.01)
         }
 
     def _search_in_tribunale(self, query):
@@ -37,20 +62,14 @@ class TestSuite:
 
     def _evaluate_search_results(self, search_results, relevantDocumentTitles):
         num_relevant_documents_found = 0
-        num_relevant_documents_in_top_positions = 0
-        num_relevant_documents_in_top_1 = 0
-        num_relevant_documents_in_top_2 = 0
-        num_relevant_documents_in_top_3 = 0
-        num_relevant_documents_in_top_5 = 0
-        num_relevant_documents_in_top_8 = 0
-        num_relevant_documents_in_top_10 = 0
-        num_relevant_documents_in_top_15 = 0
-
         total_number_of_documents_returned = len(search_results)
         total_number_of_relevant_documents = len(relevantDocumentTitles)
 
-        search_results_doc_titles = [search_result["document"] for search_result in search_results]
+        max_k = 15
+        num_relevants_in_top_k = [0 for i in range(max_k)]
 
+        # Preprocessing
+        search_results_doc_titles = [search_result["document"] for search_result in search_results]
         for relevantDocumentTitle in relevantDocumentTitles:
             position_in_search_results = None
             document_found = False
@@ -60,92 +79,57 @@ class TestSuite:
                 pass
             finally:
                 document_found = position_in_search_results is not None
-                if document_found:
+                if (document_found):
                     num_relevant_documents_found += 1
-                    if position_in_search_results < total_number_of_relevant_documents:
-                        num_relevant_documents_in_top_positions += 1
-                    if position_in_search_results < 15:
-                        num_relevant_documents_in_top_15 += 1
-                        if position_in_search_results < 10:
-                            num_relevant_documents_in_top_10 += 1
-                            if position_in_search_results < 8:
-                                num_relevant_documents_in_top_8 += 1
-                                if position_in_search_results < 5:
-                                    num_relevant_documents_in_top_5 += 1
-                                    if position_in_search_results < 3:
-                                        num_relevant_documents_in_top_3 += 1
-                                        if position_in_search_results < 2:
-                                            num_relevant_documents_in_top_2 += 1
-                                            if position_in_search_results < 1:
-                                                num_relevant_documents_in_top_1 += 1
+                    for i in range(position_in_search_results, max_k):
+                        num_relevants_in_top_k[i] += 1
 
+        # Total recall
         recall = num_relevant_documents_found / total_number_of_relevant_documents
-        precision = num_relevant_documents_found / total_number_of_documents_returned if total_number_of_documents_returned else 0
+
+        # Total precision
+        precision = 0
+        if (total_number_of_relevant_documents == 0 and total_number_of_documents_returned == 0):
+            precision = 1
+        elif (total_number_of_documents_returned > 0):
+            precision = num_relevant_documents_found / total_number_of_documents_returned if total_number_of_documents_returned else 0
+
+        # F1 Score
         f1_score = 2 * recall * precision / (precision + recall) if (precision + recall) else 0
 
-        perc_of_relevants_in_top_positions = 0
-        perc_of_relevants_in_top_1 = 0
-        perc_of_relevants_in_top_2 = 0
-        perc_of_relevants_in_top_3 = 0
-        perc_of_relevants_in_top_5 = 0
-        perc_of_relevants_in_top_8 = 0
-        perc_of_relevants_in_top_10 = 0
-        perc_of_relevants_in_top_15 = 0
+        # How many of the top K positions are filled with relevant documents (K capped at total_number_of_documents_returned)
+        precision_at_top_k = [0 for i in range(max_k)]
+        for i in range(max_k):
+            if (total_number_of_documents_returned):
+                precision_at_top_k[i] = num_relevants_in_top_k[i] / min(i+1, total_number_of_documents_returned)
+            else:
+                precision_at_top_k[i] = precision
 
-        if num_relevant_documents_found:
-            # Out of all relevant documents retrieved, what is the % of them that occupies the top K positions
-            perc_of_relevants_in_top_positions = num_relevant_documents_in_top_positions / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_1 = num_relevant_documents_in_top_1 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_2 = num_relevant_documents_in_top_2 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_3 = num_relevant_documents_in_top_3 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_5 = num_relevant_documents_in_top_5 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_8 = num_relevant_documents_in_top_8 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_10 = num_relevant_documents_in_top_10 / num_relevant_documents_found * recall
-            perc_of_relevants_in_top_15 = num_relevant_documents_in_top_15 / num_relevant_documents_found * recall
-
-        # Percentage of top K positions that is filled with a relevant search result
-        perc_of_top_positions_occupied_by_relevants = num_relevant_documents_in_top_positions / total_number_of_relevant_documents
-        perc_of_top_1_occupied_by_relevants = num_relevant_documents_in_top_1 / 1
-        perc_of_top_2_occupied_by_relevants = num_relevant_documents_in_top_2 / 2
-        perc_of_top_3_occupied_by_relevants = num_relevant_documents_in_top_3 / 3
-        perc_of_top_5_occupied_by_relevants = num_relevant_documents_in_top_5 / 5
-        perc_of_top_8_occupied_by_relevants = num_relevant_documents_in_top_8 / 8
-        perc_of_top_10_occupied_by_relevants = num_relevant_documents_in_top_10 / 10
-        perc_of_top_15_occupied_by_relevants = num_relevant_documents_in_top_15 / 15
-
+        # Create dictionary of results
         statistics = {
             "recall" : recall,
             "precision" : precision,
             "f1_score" : f1_score,
             "num_relevant_found" : num_relevant_documents_found,
             "num_documents_found" : total_number_of_documents_returned,
-            "actual_relevants" : total_number_of_relevant_documents,
-            "num_relevant_in_top_positions" : num_relevant_documents_in_top_positions,
-            "num_relevant_in_top_1" : num_relevant_documents_in_top_1,
-            "num_relevant_in_top_2" : num_relevant_documents_in_top_2,
-            "num_relevant_in_top_3" : num_relevant_documents_in_top_3,
-            "num_relevant_in_top_5" : num_relevant_documents_in_top_5,
-            "num_relevant_in_top_8" : num_relevant_documents_in_top_8,
-            "num_relevant_in_top_10" : num_relevant_documents_in_top_10,
-            "num_relevant_in_top_15" : num_relevant_documents_in_top_15,
-            "perc_of_relevants_in_top_positions" : perc_of_relevants_in_top_positions,
-            "perc_of_relevants_in_top_1" : perc_of_relevants_in_top_1,
-            "perc_of_relevants_in_top_2" : perc_of_relevants_in_top_2,
-            "perc_of_relevants_in_top_3" : perc_of_relevants_in_top_3,
-            "perc_of_relevants_in_top_5" : perc_of_relevants_in_top_5,
-            "perc_of_relevants_in_top_8" : perc_of_relevants_in_top_8,
-            "perc_of_relevants_in_top_10" : perc_of_relevants_in_top_10,
-            "perc_of_relevants_in_top_15" : perc_of_relevants_in_top_15,
-            "perc_of_top_positions_occupied_by_relevants" : perc_of_top_positions_occupied_by_relevants,
-            "perc_of_top_1_occupied_by_relevants" : perc_of_top_1_occupied_by_relevants,
-            "perc_of_top_2_occupied_by_relevants" : perc_of_top_2_occupied_by_relevants,
-            "perc_of_top_3_occupied_by_relevants" : perc_of_top_3_occupied_by_relevants,
-            "perc_of_top_5_occupied_by_relevants" : perc_of_top_5_occupied_by_relevants,
-            "perc_of_top_8_occupied_by_relevants" : perc_of_top_8_occupied_by_relevants,
-            "perc_of_top_10_occupied_by_relevants" : perc_of_top_10_occupied_by_relevants,
-            "perc_of_top_15_occupied_by_relevants" : perc_of_top_15_occupied_by_relevants,
-            "scores" : [search_result["score"] for search_result in search_results]
+            "actual_relevants" : total_number_of_relevant_documents
         }
+
+        labels_num_relevants_at_top_k = [
+            "num_relevants_at_top_{}".format(k+1)
+            for k in range(max_k)
+        ]
+        for i in range(max_k):
+            label = labels_num_relevants_at_top_k[i]
+            statistics[label] = num_relevants_in_top_k[i]
+
+        labels_precision_at_top_k = [
+            "precision_at_top_{}".format(k+1)
+            for k in range(max_k)
+        ]
+        for i in range(max_k):
+            label = labels_precision_at_top_k[i]
+            statistics[label] = precision_at_top_k[i]
 
         return statistics
 
@@ -198,14 +182,8 @@ class TestSuite:
         return final_dataframe
 
     def _summarize_test_results(self, df):
-        current_search_engine = df.loc[df["search_engine"] ==  "current_search_engine"]
-        new_search_engine = df.loc[df["search_engine"] !=  "current_search_engine"]
-        excl_synonyms_excl_stopwords = new_search_engine.loc[new_search_engine["search_engine"] == "new (excl_synonyms_excl_stopwords)"]
-        incl_synonyms_excl_stopwords = new_search_engine.loc[new_search_engine["search_engine"] == "new (incl_synonyms_excl_stopwords)"]
-        excl_synonyms_incl_stopwords = new_search_engine.loc[new_search_engine["search_engine"] == "new (excl_synonyms_incl_stopwords)"]
-        incl_synonyms_incl_stopwords = new_search_engine.loc[new_search_engine["search_engine"] == "new (incl_synonyms_incl_stopwords)"]
-        summary_dfs = [current_search_engine, excl_synonyms_excl_stopwords, incl_synonyms_excl_stopwords, excl_synonyms_incl_stopwords, incl_synonyms_incl_stopwords]
-        return summary_dfs
+        df.set_index("search_engine")
+        return df
 
     def searchOneKeywordPerDocument(self, num_documents_to_select):
         documents = random.sample(self.tribunaleDataLoader.documents, num_documents_to_select)
@@ -229,6 +207,43 @@ class TestSuite:
         df = self._convert_test_results(testResults)
         return df
 
+    def searchQueryFromGroundTruth(self, query, gt_documents):
+        actual_documentTitles = [document["identifier"].upper() for document in self.tribunaleDataLoader.documents]
+        gt_documentTitles = [document.upper() for document in gt_documents]
+        for gt_documentTitle in gt_documentTitles:
+            if gt_documentTitle not in actual_documentTitles:
+                raise Exception("Ground truth contains document {} that is not present in the database".format(gt_documentTitle))
+        testResults = self._search_and_compare(query, documentTitles=gt_documentTitles)
+        # print(json.dumps(testResults))
+        df = self._convert_test_results(testResults)
+        return df
+
+    def _run_groundtruth_suite(self, test_dir, gt_tests):
+        num_tests = len(gt_tests)
+        test_name = "gt_dataset"
+        all_dfs = []
+        successful_iterations = 0
+        output_file = test_dir + "/" + test_name + ".csv"
+        print(bcolors.INFO + "-" * 100)
+        print(bcolors.INFO + "Starting tests [{}]".format(output_file))
+        print(bcolors.INFO + "-" * 100)
+        iterations = num_tests
+        while successful_iterations < iterations:
+            query = gt_tests[successful_iterations]["query"]
+            gt_documents = gt_tests[successful_iterations]["documents"]
+            try:
+                df = self.searchQueryFromGroundTruth(query, gt_documents)
+                all_dfs.append(df)
+                successful_iterations = successful_iterations + 1
+                if not (successful_iterations % 1):
+                    print(bcolors.GREEN + "Tests run: {} (out of {})".format(successful_iterations, iterations))
+            except Exception as e:
+                print(bcolors.YELLOW + "Repeating test [reason: {}]".format(str(e)))
+        final_df = pd.concat(all_dfs)
+        summary = self._summarize_test_results(final_df)
+        summary.to_csv(output_file)
+        return summary
+
     def _run_test(self, folder, test_name, test_number, num_tests, iterations, function, **kwargs):
         all_dfs = []
         successful_iterations = 0
@@ -241,16 +256,16 @@ class TestSuite:
                 df = function(**kwargs)
                 all_dfs.append(df)
                 successful_iterations = successful_iterations + 1
-                if not (successful_iterations % 2):
+                if not (successful_iterations % 1):
                     print(bcolors.GREEN + "({}/{}) Tests run: {} (out of {})".format(test_number, num_tests, successful_iterations, iterations))
             except Exception as e:
                 print(bcolors.YELLOW + "Repeating test [reason: {}]".format(str(e)))
         final_df = pd.concat(all_dfs)
-        summary = pd.concat(self._summarize_test_results(final_df))
+        summary = self._summarize_test_results(final_df)
         summary.to_csv(output_file)
         return summary
 
-    def run_suite(self, tests, iterations, test_dir):
+    def _run_validation_suite(self, tests, iterations, test_dir):
         num_tests = len(tests)
         for i in range(len(tests)):
             max_keywords = tests[i]["max_keywords"]
@@ -259,46 +274,59 @@ class TestSuite:
             function = self.searchOneKeywordPerDocument if max_keywords == 1 else self.searchMultipleKeywordsPerDocument
             self._run_test(test_dir, test_name, i+1, num_tests, iterations, function, num_documents_to_select=num_documents)
 
+    def run_validation_suite(self, test_suite_name):
+        base_dir = "tests"
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        test_dir = base_dir + "/" + test_suite_name
+        os.mkdir(test_dir)
+        iterations=100
+        tests = [
+            {
+                "max_keywords": 1,
+                "num_documents": 1
+            },
+            {
+                "max_keywords": 2,
+                "num_documents": 1
+            },
+            {
+                "max_keywords": 3,
+                "num_documents": 1
+            },
+            {
+                "max_keywords": 1,
+                "num_documents": 2
+            },
+            {
+                "max_keywords": 2,
+                "num_documents": 2
+            },
+            {
+                "max_keywords": 3,
+                "num_documents": 3
+            },
+            {
+                "max_keywords": 2,
+                "num_documents": 4
+            },
+        ]
+        self._run_validation_suite(tests, iterations, test_dir)
+        Report(test_suite_name)
+
+    def run_groundtruth_suite(self, test_suite_name):
+        base_dir = "tests"
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        test_dir = base_dir + "/" + test_suite_name
+        os.mkdir(test_dir)
+        f = open('gt.json')
+        gt_tests = json.load(f)
+        f.close()
+        self._run_groundtruth_suite(test_dir, gt_tests)
+        Report(test_suite_name)
 
 test_suite_name = datetime.now().strftime("%m-%d-%Y_%H_%M_%S")
-base_dir = "tests"
-if not os.path.exists(base_dir):
-    os.mkdir(base_dir)
-
-test_dir = base_dir + "/" + test_suite_name
-os.mkdir(test_dir)
-
-iterations=500
-tests = [
-    {
-        "max_keywords": 1,
-        "num_documents": 1
-    },
-    {
-        "max_keywords": 2,
-        "num_documents": 1
-    },
-    {
-        "max_keywords": 3,
-        "num_documents": 1
-    },
-    {
-        "max_keywords": 1,
-        "num_documents": 2
-    },
-    {
-        "max_keywords": 2,
-        "num_documents": 2
-    },
-    {
-        "max_keywords": 3,
-        "num_documents": 3
-    },
-    {
-        "max_keywords": 2,
-        "num_documents": 5
-    },
-]
 testSuite = TestSuite()
-testSuite.run_suite(tests, iterations, test_dir)
-report = Report(test_suite_name)
+#testSuite.run_validation_suite(test_suite_name)
+testSuite.run_groundtruth_suite(test_suite_name)

@@ -1,0 +1,133 @@
+[
+    {
+        "query" : "quanto costa rinunciare eredita",
+        "documents" : [
+            "Revoca della rinuncia all’eredita'",
+            "Rinuncia all’eredita'",
+            "FISSAZIONE DEI TERMINI PER ACCETTARE L’EREDITA",
+            "ACCETTAZIONE DELL’EREDITA CON BENEFICIO DI INVENTARIO",
+            "Esecutori testamentari: rinuncia",
+            "Esecutori testamentari: accettazione",
+            "Apposizione dei sigilli all’eredita'",
+            "RIMOZIONE DEI SIGILLI ALL’EREDITA'",
+            "AUTORIZZAZIONE A VENDERE BENI DI EREDITA' ACCETTATE CON BENEFICIO",
+            "Inventario dell’eredita'",
+            "Eredita giacente",
+            "Atti di straordinaria amministrazione a favore di minori e/o genitori"
+        ]
+    },
+    {
+        "query" : "quanto costa rinunciare eredita per un minore",
+        "documents" : [
+            "Revoca della rinuncia all’eredita'",
+            "Rinuncia all’eredita'",
+            "FISSAZIONE DEI TERMINI PER ACCETTARE L’EREDITA",
+            "ACCETTAZIONE DELL’EREDITA CON BENEFICIO DI INVENTARIO",
+            "Esecutori testamentari: rinuncia",
+            "Esecutori testamentari: accettazione",
+            "Apposizione dei sigilli all’eredita'",
+            "RIMOZIONE DEI SIGILLI ALL’EREDITA'",
+            "AUTORIZZAZIONE A VENDERE BENI DI EREDITA' ACCETTATE CON BENEFICIO",
+            "Inventario dell’eredita'",
+            "Eredita giacente",
+            "Atti di straordinaria amministrazione a favore di minori e/o genitori"
+        ]
+    },
+    {
+        "query" : "informazione testimoni",
+        "documents" : [
+            "Unioni Civili",
+            "Atto notorio",
+            "Testimoni: rilascio attestazione di testimonianza e rimborso spese",
+            "Informazioni ai testimoni In cause civili al Tribunale Di Milano",
+            "Informazioni ai testimoni in cause penali al Tribunale Di Milano",
+            " Liquidazione delle spese di viaggio ai testimoni non residenti"
+        ]
+    },
+    {
+        "query" : "informazioni testimone unioni civili",
+        "documents" : [
+            "Unioni Civili",
+            "Atto notorio",
+            "Testimoni: rilascio attestazione di testimonianza e rimborso spese",
+            " Liquidazione delle spese di viaggio ai testimoni non residenti"
+        ]
+    },
+    {
+        "query" : "trattamento sanitario obbligatorio",
+        "documents" : [
+            "Trattamento sanitario obbligatorio (TSO)"
+        ]
+    },
+    {
+        "query" : "come si adotta una persona maggiorenne",
+        "documents" : [
+            "Adozione di persona maggiorenne",
+            "Linee guida  spese extra  assegno di mantenimento per figli minori  e figli maggiorenni non economicamente indipendenti"
+        ]
+    },
+    {
+        "query" : "informazioni unioni civili",
+        "documents" : [
+            "Unioni Civili",
+            "Linee guida  spese extra  assegno di mantenimento per figli minori  e figli maggiorenni non economicamente indipendenti"
+        ]
+    },
+    {
+        "query" : "come ci si oppone ad una sanzione amministrativa",
+        "documents" : [
+            "Opposizione a sanzione amministrativa"
+        ]
+    },
+    {
+        "query" : "mi serve un difensore per una sanzione amministrativa",
+        "documents" : [
+            "Opposizione a sanzione amministrativa"
+        ]
+    },
+    {
+        "query" : "come fare passaporto a mio figlio che e' minore",
+        "documents" : [
+            "Rilascio passaporto e documento valido per l’espatrio (C.I.) al minore e/o al genitore"
+        ]
+    },
+    {
+        "query" : "cosa fare se una persona e' scomparsa",
+        "documents" : [
+            "Scomparsa, assenza o morte presunta"
+        ]
+    },
+    {
+        "query" : "cosa fare se una persona e' scomparsa",
+        "documents" : [
+            "Scomparsa, assenza o morte presunta"
+        ]
+    },
+    {
+        "query" : "sfratto",
+        "documents" : [
+            "Istanza per la sospensione dello sfratto",
+            "Amministrazione di sostegno",
+            "Interdizione",
+            "Inabilitazione"
+        ]
+    },
+    {
+        "query" : "divorzi",
+        "documents" : [
+            "Separazione consensuale senza l’assistenza del difensore",
+            "Separazione giudiziale",
+            "Divorzio su ricorso congiunto",
+            "Divorzio contenzioso",
+            "Cause per alimenti ex artt. 433 e ss. c.c.",
+            "Modifica condizioni separazione o divorzio",
+            "Ricorso per dispensa dal termine di 300 giorni a nuovo matrimonio"
+        ]
+    },
+    {
+        "query" : "come mantenere mia figlia che vive con noi",
+        "documents" : [
+            "Linee guida  spese extra  assegno di mantenimento per figli minori  e figli maggiorenni non economicamente indipendenti"
+        ]
+    }
+]
