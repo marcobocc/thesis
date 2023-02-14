@@ -1,5 +1,6 @@
 import json
 
+
 class TribunaleDataLoader:
     def __init__(self):
         file = open('sections.json')
@@ -17,8 +18,8 @@ class TribunaleDataLoader:
                     paragraph_content = paragraph["content"]
                     doc_contents += paragraph_content + " "
                 doc_entry = {
-                    "identifier" : doc_title,
-                    "section" : section_name,
-                    "contents" : doc_contents
+                    "identifier": doc_title,
+                    "section": section_name,
+                    "contents": doc_contents
                 }
                 self.documents.append(doc_entry)
