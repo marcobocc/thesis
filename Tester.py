@@ -172,10 +172,7 @@ class Tester:
         final_dataframe = pd.concat([dataframe.drop(["statistics"], axis=1).reset_index(), statsDataframe], axis=1)
         return final_dataframe
 
-    def _summarize_test_results(self, df):
-        return df.reset_index(drop=True)
-
-    def searchQueryFromGroundTruth(self, query, gt_documents):
+    def search_test_query(self, query, gt_documents):
         actual_documentTitles = [document["identifier"].upper() for document in self.tribunaleDataLoader.documents]
         gt_documentTitles = [document.upper() for document in gt_documents]
         for gt_documentTitle in gt_documentTitles:
@@ -200,15 +197,14 @@ class Tester:
             query = tests[successful_iterations]["query"]
             gt_documents = tests[successful_iterations]["documents"]
             try:
-                df = self.searchQueryFromGroundTruth(query, gt_documents)
+                df = self.search_test_query(query, gt_documents)
                 all_dfs.append(df)
                 successful_iterations = successful_iterations + 1
                 if not (successful_iterations % 1):
-                    print(bcolors.GREEN + "{}/{}: Successful".format(successful_iterations, iterations))
+                    print(bcolors.GREEN + "({}/{}) Completed".format(successful_iterations, iterations))
             except Exception as e:
-                print(bcolors.YELLOW + "{}/{}: Repeating test [reason: {}]".format(successful_iterations, iterations, str(e)))
-        final_df = pd.concat(all_dfs)
-        summary = self._summarize_test_results(final_df)
+                print(bcolors.YELLOW + "({}/{}) Repeating test [reason: {}]".format(successful_iterations, iterations, str(e)))
+        summary = pd.concat(all_dfs).reset_index(drop=True)
         summary.to_csv(output_file, index=False)
         return summary
 
@@ -233,6 +229,6 @@ class Tester:
         test_dir = base_dir + "/" + test_date
         os.mkdir(test_dir)
         testGenerator = TestGenerator()
-        gt_tests = testGenerator.generate(num_samples=num_tests, num_documents_to_select=2, num_keywords_per_document=2)
+        gt_tests = testGenerator.generate(num_samples=num_tests, num_documents_to_select=1, num_keywords_per_document=1)
         self._run_tests(test_dir, gt_tests)
         Report(test_date)
