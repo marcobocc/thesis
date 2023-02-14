@@ -9,7 +9,6 @@ import matplotlib as mpl
 from datetime import datetime
 from nltk.corpus import stopwords
 import os
-import math
 
 class bcolors:
     GREEN = '\033[92m'
@@ -27,11 +26,6 @@ class TestSuite:
 
     def _search_in_new_engine(self, query):
         return {
-            "excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False),
-            "excl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=True),
-            "incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False),
-            "incl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=True),
-
             "0.9_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.9),
             "0.8_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.8),
             "0.7_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False, score_threshold=0.7),
@@ -54,7 +48,13 @@ class TestSuite:
             "0.2_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.2),
             "0.1_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.1),
             "0.05_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.05),
-            "0.01_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.01)
+            "0.01_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False, score_threshold=0.01),
+
+            "excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=False),
+            "excl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=False, include_stopwords=True),
+            "incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=False),
+            "incl_synonyms_incl_stopwords" : self.newSearchEngine.search(query, include_synonyms=True, include_stopwords=True),
+
         }
 
     def _search_in_tribunale(self, query):
@@ -64,6 +64,9 @@ class TestSuite:
         num_relevant_documents_found = 0
         total_number_of_documents_returned = len(search_results)
         total_number_of_relevant_documents = len(relevantDocumentTitles)
+
+        total_num_of_documents_database = len(self.tribunaleDataLoader.documents)
+        total_number_of_irrelevant_documents_database = total_num_of_documents_database - total_number_of_relevant_documents
 
         max_k = 15
         num_relevants_in_top_k = [0 for i in range(max_k)]
@@ -91,11 +94,17 @@ class TestSuite:
         precision = 0
         if (total_number_of_relevant_documents == 0 and total_number_of_documents_returned == 0):
             precision = 1
-        elif (total_number_of_documents_returned > 0):
+        elif (total_number_of_relevant_documents > 0 and total_number_of_documents_returned == 0):
+            precision = 0
+        else:
             precision = num_relevant_documents_found / total_number_of_documents_returned if total_number_of_documents_returned else 0
 
         # F1 Score
         f1_score = 2 * recall * precision / (precision + recall) if (precision + recall) else 0
+
+        # Fallout
+        irrelevant_documents_found = total_number_of_documents_returned - num_relevant_documents_found
+        fallout = irrelevant_documents_found / total_number_of_irrelevant_documents_database
 
         # How many of the top K positions are filled with relevant documents (K capped at total_number_of_documents_returned)
         precision_at_top_k = [0 for i in range(max_k)]
@@ -108,20 +117,7 @@ class TestSuite:
         # Create dictionary of results
         statistics = {
             "recall" : recall,
-            "precision" : precision,
-            "f1_score" : f1_score,
-            "num_relevant_found" : num_relevant_documents_found,
-            "num_documents_found" : total_number_of_documents_returned,
-            "actual_relevants" : total_number_of_relevant_documents
         }
-
-        labels_num_relevants_at_top_k = [
-            "num_relevants_at_top_{}".format(k+1)
-            for k in range(max_k)
-        ]
-        for i in range(max_k):
-            label = labels_num_relevants_at_top_k[i]
-            statistics[label] = num_relevants_in_top_k[i]
 
         labels_precision_at_top_k = [
             "precision_at_top_{}".format(k+1)
@@ -131,6 +127,26 @@ class TestSuite:
             label = labels_precision_at_top_k[i]
             statistics[label] = precision_at_top_k[i]
 
+        extra_stats = {
+            "f1_score" : f1_score,
+            "precision" : precision,
+            "fallout" : fallout,
+            "num_relevant_found" : num_relevant_documents_found,
+            "num_documents_found" : total_number_of_documents_returned,
+            "actual_relevants" : total_number_of_relevant_documents,
+            "num_irrelevant_found" : irrelevant_documents_found,
+            "actual_irrelevants" : total_number_of_irrelevant_documents_database
+        }
+
+        labels_num_relevants_at_top_k = [
+            "num_relevants_at_top_{}".format(k+1)
+            for k in range(max_k)
+        ]
+        for i in range(max_k):
+            label = labels_num_relevants_at_top_k[i]
+            extra_stats[label] = num_relevants_in_top_k[i]
+
+        statistics.update(extra_stats)
         return statistics
 
     def _search_and_compare(self, query, documentTitles):
@@ -140,8 +156,8 @@ class TestSuite:
             {
                 "search_engine" : "current_search_engine",
                 "query" : query,
-                "ground-truth" : documentTitles,
                 "search_results" : [search_result["document"] for search_result in searchResultsFromTribunale],
+                "ground-truth" : documentTitles,
                 "statistics" : self._evaluate_search_results(searchResultsFromTribunale, documentTitles)
             }
         ]
@@ -149,8 +165,8 @@ class TestSuite:
             {
                 "search_engine" : "new ({})".format(config),
                 "query" : query,
-                "ground-truth" : documentTitles,
                 "search_results" : [search_result["document"] for search_result in searchResultsFromNewEngine_AllConfigs[config]],
+                "ground-truth" : documentTitles,
                 "statistics" : self._evaluate_search_results(searchResultsFromNewEngine_AllConfigs[config], documentTitles)
             }
         for config in searchResultsFromNewEngine_AllConfigs
@@ -280,7 +296,7 @@ class TestSuite:
             os.mkdir(base_dir)
         test_dir = base_dir + "/" + test_suite_name
         os.mkdir(test_dir)
-        iterations=100
+        iterations=500
         tests = [
             {
                 "max_keywords": 1,
@@ -326,7 +342,10 @@ class TestSuite:
         self._run_groundtruth_suite(test_dir, gt_tests)
         Report(test_suite_name)
 
-test_suite_name = datetime.now().strftime("%m-%d-%Y_%H_%M_%S")
+test_date = datetime.now().strftime("%m-%d-%Y_%H_%M_%S")
+test_name = "euclidean"
+
+test_suite_name = test_date + "_" + test_name
 testSuite = TestSuite()
 #testSuite.run_validation_suite(test_suite_name)
 testSuite.run_groundtruth_suite(test_suite_name)

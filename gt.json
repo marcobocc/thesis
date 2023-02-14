@@ -98,12 +98,6 @@
         ]
     },
     {
-        "query" : "cosa fare se una persona e' scomparsa",
-        "documents" : [
-            "Scomparsa, assenza o morte presunta"
-        ]
-    },
-    {
         "query" : "sfratto",
         "documents" : [
             "Istanza per la sospensione dello sfratto",

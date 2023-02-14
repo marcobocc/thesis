@@ -45,7 +45,7 @@ class NewSearchEngine:
         stemmed_term = self.stemmer.stem(term)
         df = len(self.index[stemmed_term]) if stemmed_term in self.index else 0.0
         num_documents = len(self.documents)
-        idf = math.log((num_documents + 1) / (float(df) + 1.0)) # Smooth TF-IDF to prevent division by 0
+        idf = math.log((num_documents) / (float(df) + 1.0)) # Smooth TF-IDF to prevent division by 0
         return idf
 
     def _get_tf(self, term, documentIdentifier):
@@ -104,7 +104,26 @@ class NewSearchEngine:
             dotproduct += (q[i] * d[i])
             q_square += q[i] * q[i]
             d_square += d[i] * d[i]
-        cosine_similarity = dotproduct
+        cosine_similarity = dotproduct / (math.sqrt(q_square) * math.sqrt(d_square))
+        return cosine_similarity
+
+    def _get_dot_product_similarity(self, query_scores, document_scores):
+        keywords = [kw for kw in query_scores]
+        if len(query_scores) != len(document_scores):
+            raise Exception("Vectors are different size")
+        q = []
+        d = []
+        for kw in keywords:
+            q.append(query_scores[kw])
+            d.append(document_scores[kw])
+        dotproduct = 0
+        q_square = 0
+        d_square = 0
+        for i in range(len(q)):
+            dotproduct += (q[i] * d[i])
+            q_square += q[i] * q[i]
+            d_square += d[i] * d[i]
+        cosine_similarity = dotproduct / (math.sqrt(q_square) * math.sqrt(d_square))
         return cosine_similarity
 
     def _get_euclidean_similarity(self, query_scores, document_scores):
@@ -120,7 +139,7 @@ class NewSearchEngine:
         for i in range(len(q)):
             euclidean_distance += (q[i] - d[i]) * (q[i] - d[i])
         euclidean_distance = euclidean_distance
-        euclidean_similarity = 1 / (math.exp(euclidean_distance))
+        euclidean_similarity = 1 / (1 + euclidean_distance)
         return euclidean_similarity
 
     def _sort_documents_by_rank(self, search_results, query_keywords, score_threshold=0.0):
@@ -129,7 +148,7 @@ class NewSearchEngine:
         ranked_documents = []
         for documentIdentifier in scored_documents:
             document_scores = scored_documents[documentIdentifier]
-            cosine_similarity = self._get_cosine_similarity(query_scores, document_scores)
+            cosine_similarity = self._get_euclidean_similarity(query_scores, document_scores)
             ranked_documents.append({
                     "document" : documentIdentifier.upper(),
                     "score" : cosine_similarity,
@@ -166,7 +185,3 @@ class NewSearchEngine:
         search_results = self._find_documents(query_keywords)
         sorted_search_results = self._sort_documents_by_rank(search_results, query_keywords, score_threshold=score_threshold)
         return sorted_search_results
-
-#engine = NewSearchEngine(TribunaleDataLoader().documents)
-#results = engine.search("quanto costa rinunciare eredita", score_threshold=0.3)
-#print(json.dumps(results, indent=4))
