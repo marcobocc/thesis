@@ -187,23 +187,22 @@ class Tester:
         num_tests = len(tests)
         test_name = "gt_dataset"
         all_dfs = []
-        successful_iterations = 0
         output_file = test_dir + "/" + test_name + ".csv"
         print(bcolors.INFO + "-" * 100)
         print(bcolors.INFO + "Starting tests [{}]".format(output_file))
         print(bcolors.INFO + "-" * 100)
         iterations = num_tests
-        while successful_iterations < iterations:
-            query = tests[successful_iterations]["query"]
-            gt_documents = tests[successful_iterations]["documents"]
+        i = 0
+        while i < iterations:
+            query = tests[i]["query"]
+            gt_documents = tests[i]["documents"]
             try:
                 df = self.search_test_query(query, gt_documents)
                 all_dfs.append(df)
-                successful_iterations = successful_iterations + 1
-                if not (successful_iterations % 1):
-                    print(bcolors.GREEN + "({}/{}) Completed".format(successful_iterations, iterations))
+                print(bcolors.GREEN + "({}/{}) Completed".format(i+1, iterations))
             except Exception as e:
-                print(bcolors.YELLOW + "({}/{}) Repeating test [reason: {}]".format(successful_iterations, iterations, str(e)))
+                print(bcolors.YELLOW + "({}/{}) Test skipped due to exception [reason: {}]".format(i+1, iterations, str(e)))
+            i = i + 1
         summary = pd.concat(all_dfs).reset_index(drop=True)
         summary.to_csv(output_file, index=False)
         return summary

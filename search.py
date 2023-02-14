@@ -3,6 +3,7 @@ import json
 
 from SearchEngineConfig import SearchEngineConfig
 from SearchEnginePrototype import SearchEnginePrototype
+from SearchEngineURP import SearchEngineURP
 
 
 class bcolors:
@@ -21,12 +22,13 @@ parser.add_argument("-c", "--cutoff",  default=0.0, type=float)
 parser.add_argument("-s", "--stemming",  default=True, type=bool)
 parser.add_argument("-r", "--remove_stopwords",  default=True, type=bool)
 parser.add_argument("-x", "--expand_synonyms",  default=False, type=bool)
+parser.add_argument("-u", "--urp",  default=False, type=bool)  # If true, also provides results from URP for comparison
 parser.add_argument("--similarity",
                     choices=[SearchEngineConfig.COSINE,
                              SearchEngineConfig.DOT_PRODUCT,
                              SearchEngineConfig.EUCLIDEAN],
                     type=str.upper,
-                    default=SearchEngineConfig.COSINE)
+                    default=SearchEngineConfig.EUCLIDEAN)
 
 args = parser.parse_args()
 k = args.k
@@ -46,6 +48,8 @@ searchEngine = SearchEnginePrototype(SearchEngineConfig(
     )
 )
 
+urp = SearchEngineURP()
+
 print("Initialized search engine with config:")
 print(json.dumps(searchEngine.config.to_dict(), indent=4))
 
@@ -64,3 +68,15 @@ while True:
 
     results = all_results if k is None else all_results[:min(k, len(all_results))]
     print("{}\n".format(json.dumps(results, indent=4)))
+
+    if (args.urp):
+        print(bcolors.INFO + "-" * 100)
+        try:
+            URP_all_results_with_score = urp.search(query)
+            URP_all_results = [r["document"] for r in URP_all_results_with_score]
+            print("{}(URP found {} search results){}".format(bcolors.YELLOW, len(URP_all_results), bcolors.INFO))
+            print("{}\n".format(json.dumps(URP_all_results, indent=4)))
+        except Exception:
+            print("{}(Could not fetch query from URP){}".format(bcolors.YELLOW, bcolors.INFO))
+        print(bcolors.INFO + "-" * 100)
+
