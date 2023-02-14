@@ -10,6 +10,7 @@ import json
 import pandas as pd
 
 from datetime import datetime
+import itertools
 
 
 class bcolors:
@@ -22,54 +23,59 @@ class bcolors:
 
 class TestSuite:
     def __init__(self):
-        self.tribunaleSearchEngine = SearchEngineURP()
+        self.searchEngineURP = SearchEngineURP()
         self.tribunaleDataLoader = TribunaleDataLoader()
 
-        config = SearchEngineConfig(
-            config_name="test",
-            use_stemming=True,
-            remove_stopwords=True,
-            expand_synonyms=False,
-            cutoff=0.0,
-            similarity=SearchEngineConfig.EUCLIDEAN
-        )
+        print("Initializing the search engines...")
+        self.configs = self.generate_search_engine_configs()
+        self.searchEngines = [SearchEnginePrototype(config) for config in self.configs]
 
-        self.newSearchEngine = SearchEnginePrototype(config)
-
-    def _search_in_new_engine(self, query):
-        return {
-            "0.9_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.8_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.7_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.6_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.5_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.4_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.3_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.2_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.1_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.05_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.01_cutoff_excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-
-            "0.9_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.8_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.7_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.6_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.5_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.4_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.3_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.2_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.1_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.05_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "0.01_cutoff_incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-
-            "excl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "excl_synonyms_incl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "incl_synonyms_excl_stopwords" : self.newSearchEngine.search(query), # noqa
-            "incl_synonyms_incl_stopwords" : self.newSearchEngine.search(query), # noqa
+    def generate_search_engine_configs(self):
+        choices = {
+            "use_stemming": [False, True],
+            "remove_stopwords": [False, True],
+            "expand_synonyms": [False, True],
+            "cutoff": [0.0, 0.3, 0.5, 0.7, 0.9],
+            "similarity": [SearchEngineConfig.COSINE, SearchEngineConfig.DOT_PRODUCT, SearchEngineConfig.EUCLIDEAN]
         }
+        combinations = [dict(zip(choices.keys(), instance)) for instance in itertools.product(*choices.values())]
+        configs = [
+            SearchEngineConfig(
+                remove_stopwords=c["remove_stopwords"],
+                use_stemming=c["use_stemming"],
+                expand_synonyms=c["expand_synonyms"],
+                cutoff=c["cutoff"],
+                similarity=c["similarity"]
+            )
+            for c in combinations
+        ]
+        return configs
 
-    def _search_in_tribunale(self, query):
-        return self.tribunaleSearchEngine.search(query)
+    def _search_in_all(self, query, documentTitles):
+        query_results_from_URP_with_scores = self.searchEngineURP.search(query)
+        query_results_URP = [
+            {
+                "search_engine": self.searchEngineURP.config.config_name,
+                "query": query,
+                "search_results": [search_result["document"] for search_result in query_results_from_URP_with_scores],
+                "ground-truth": documentTitles,
+                "statistics": self._evaluate_search_results(query_results_from_URP_with_scores, documentTitles),
+                "config": self.searchEngineURP.config.to_dict()
+            }
+        ]
+        query_results_from_prototypes_with_scores = [s.search(query) for s in self.searchEngines]
+        query_results_prototypes = [
+            {
+                "search_engine": self.searchEngines[i].config.config_name,
+                "query": query,
+                "search_results": [search_result["document"] for search_result in query_results_from_prototypes_with_scores[i]],
+                "ground-truth": documentTitles,
+                "statistics": self._evaluate_search_results(query_results_from_prototypes_with_scores[i], documentTitles),
+                "config": self.searchEngines[i].config.to_dict(),
+            }
+            for i in range(len(query_results_from_prototypes_with_scores))
+        ]
+        return query_results_URP + query_results_prototypes
 
     def _evaluate_search_results(self, search_results, relevantDocumentTitles):
         num_relevant_documents_found = 0
@@ -160,30 +166,6 @@ class TestSuite:
         statistics.update(extra_stats)
         return statistics
 
-    def _search_and_compare(self, query, documentTitles):
-        searchResultsFromTribunale = self._search_in_tribunale(query)
-        searchResultsFromNewEngine_AllConfigs = self._search_in_new_engine(query)
-        test_results_tribunale = [
-            {
-                "search_engine": "current_search_engine",
-                "query": query,
-                "search_results": [search_result["document"] for search_result in searchResultsFromTribunale],
-                "ground-truth": documentTitles,
-                "statistics": self._evaluate_search_results(searchResultsFromTribunale, documentTitles)
-            }
-        ]
-        test_results_new_engine_all_configs = [
-            {
-                "search_engine": "new ({})".format(config),
-                "query": query,
-                "search_results": [search_result["document"] for search_result in searchResultsFromNewEngine_AllConfigs[config]],
-                "ground-truth": documentTitles,
-                "statistics": self._evaluate_search_results(searchResultsFromNewEngine_AllConfigs[config], documentTitles)
-            }
-            for config in searchResultsFromNewEngine_AllConfigs
-        ]
-        return test_results_tribunale + test_results_new_engine_all_configs
-
     def _convert_test_results(self, test_results):
         dataframe = pd.concat([pd.Series(test_result).to_frame().T for test_result in test_results])
         statsDataframe = pd.json_normalize(dataframe["statistics"]).reset_index()
@@ -200,7 +182,7 @@ class TestSuite:
         for gt_documentTitle in gt_documentTitles:
             if gt_documentTitle not in actual_documentTitles:
                 raise Exception("Ground truth contains document {} that is not present in the database".format(gt_documentTitle))
-        testResults = self._search_and_compare(query, documentTitles=gt_documentTitles)
+        testResults = self._search_in_all(query, documentTitles=gt_documentTitles)
         # print(json.dumps(testResults))
         df = self._convert_test_results(testResults)
         return df
@@ -230,101 +212,6 @@ class TestSuite:
         summary = self._summarize_test_results(final_df)
         summary.to_csv(output_file)
         return summary
-
-    def _run_test(self, folder, test_name, test_number, num_tests, iterations, function, **kwargs):
-        all_dfs = []
-        successful_iterations = 0
-        output_file = folder + "/" + test_name + ".csv"
-        print(bcolors.INFO + "-" * 100)
-        print(bcolors.INFO + "Starting tests [{}]".format(output_file))
-        print(bcolors.INFO + "-" * 100)
-        while successful_iterations < iterations:
-            try:
-                df = function(**kwargs)
-                all_dfs.append(df)
-                successful_iterations = successful_iterations + 1
-                if not (successful_iterations % 1):
-                    print(bcolors.GREEN + "({}/{}) Tests run: {} (out of {})"
-                          .format(test_number, num_tests, successful_iterations, iterations))
-            except Exception as e:
-                print(bcolors.YELLOW + "Repeating test [reason: {}]".format(str(e)))
-        final_df = pd.concat(all_dfs)
-        summary = self._summarize_test_results(final_df)
-        summary.to_csv(output_file)
-        return summary
-
-    '''
-    def searchOneKeywordPerDocument(self, num_documents_to_select):
-        documents = random.sample(self.tribunaleDataLoader.documents, num_documents_to_select)
-        num_words_to_select_per_document = 1
-        queries = self._generate_random_queries_from_many_documents(documents, num_words_to_select_per_document)
-        query = " ".join(queries)
-        documentTitles = [document["identifier"].upper() for document in documents]
-        testResults = self._search_and_compare(query, documentTitles=documentTitles)
-        # print(json.dumps(testResults))
-        df = self._convert_test_results(testResults)
-        return df
-
-    def searchMultipleKeywordsPerDocument(self, num_documents_to_select):
-        documents = random.sample(self.tribunaleDataLoader.documents, num_documents_to_select)
-        num_words_to_select_per_document = random.sample(range(2, 4), 1)[0]
-        queries = self._generate_random_queries_from_many_documents(documents, num_words_to_select_per_document)
-        query = " ".join(queries)
-        documentTitles = [document["identifier"].upper() for document in documents]
-        testResults = self._search_and_compare(query, documentTitles=documentTitles)
-        # print(json.dumps(testResults))
-        df = self._convert_test_results(testResults)
-        return df
-    '''
-
-    def _run_validation_suite(self, tests, iterations, test_dir):
-        num_tests = len(tests)
-        for i in range(len(tests)):
-            max_keywords = tests[i]["max_keywords"]
-            num_documents = tests[i]["num_documents"]
-            test_name = "max_{}_words_{}_documents".format(max_keywords, num_documents)
-            function = self.searchOneKeywordPerDocument if max_keywords == 1 else self.searchMultipleKeywordsPerDocument
-            self._run_test(test_dir, test_name, i+1, num_tests, iterations, function, num_documents_to_select=num_documents)
-
-    def run_validation_suite(self, test_suite_name):
-        base_dir = "tests"
-        if not os.path.exists(base_dir):
-            os.mkdir(base_dir)
-        test_dir = base_dir + "/" + test_suite_name
-        os.mkdir(test_dir)
-        iterations = 500
-        tests = [
-            {
-                "max_keywords": 1,
-                "num_documents": 1
-            },
-            {
-                "max_keywords": 2,
-                "num_documents": 1
-            },
-            {
-                "max_keywords": 3,
-                "num_documents": 1
-            },
-            {
-                "max_keywords": 1,
-                "num_documents": 2
-            },
-            {
-                "max_keywords": 2,
-                "num_documents": 2
-            },
-            {
-                "max_keywords": 3,
-                "num_documents": 3
-            },
-            {
-                "max_keywords": 2,
-                "num_documents": 4
-            },
-        ]
-        self._run_validation_suite(tests, iterations, test_dir)
-        Report(test_suite_name)
 
     def run_groundtruth_suite(self, test_suite_name):
         base_dir = "tests"
@@ -356,5 +243,4 @@ test_name = "euclidean"
 test_suite_name = test_date + "_" + test_name
 testSuite = TestSuite()
 # testSuite.run_validation_suite(test_suite_name)
-# testSuite.run_groundtruth_suite(test_suite_name)
-testSuite.run_generated_suite(test_date)
+testSuite.run_groundtruth_suite(test_suite_name)
