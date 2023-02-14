@@ -52,10 +52,10 @@ class SearchEnginePrototype:
         if self.config.similarity == SearchEngineConfig.COSINE:
             return self._get_cosine_similarity(query_scores, document_scores)
         elif self.config.similarity == SearchEngineConfig.DOT_PRODUCT:
-            return self._get_dot_product_similarity(query_scores, document_scores) # noqa
+            return self._get_dot_product_similarity(query_scores, document_scores)
         elif self.config.similarity == SearchEngineConfig.EUCLIDEAN:
-            return self._get_euclidean_similarity(query_scores, document_scores) # noqa
-        raise Exception("Similarity measure does not exist")
+            return self._get_euclidean_similarity(query_scores, document_scores)
+        raise Exception("Similarity measure {} does not exist".format(self.config.similarity))
 
     def _build_index(self, documents):
         index = {}
