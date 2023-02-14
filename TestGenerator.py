@@ -4,26 +4,6 @@ import random
 from nltk.corpus import stopwords
 from TribunaleDataLoader import TribunaleDataLoader
 
-[
-    {
-        "query": "quanto costa rinunciare eredita",
-        "documents": [
-            "Revoca della rinuncia all’eredita'",
-            "Rinuncia all’eredita'",
-            "FISSAZIONE DEI TERMINI PER ACCETTARE L’EREDITA",
-            "ACCETTAZIONE DELL’EREDITA CON BENEFICIO DI INVENTARIO",
-            "Esecutori testamentari: rinuncia",
-            "Esecutori testamentari: accettazione",
-            "Apposizione dei sigilli all’eredita'",
-            "RIMOZIONE DEI SIGILLI ALL’EREDITA'",
-            "AUTORIZZAZIONE A VENDERE BENI DI EREDITA' ACCETTATE CON BENEFICIO",
-            "Inventario dell’eredita'",
-            "Eredita giacente",
-            "Atti di straordinaria amministrazione a favore di minori e/o genitori"
-        ]
-    }
-]
-
 
 class TestGenerator:
     def __init__(self):

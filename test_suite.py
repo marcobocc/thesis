@@ -32,9 +32,9 @@ class TestSuite:
 
     def generate_search_engine_configs(self):
         choices = {
-            "use_stemming": [False, True],
-            "remove_stopwords": [False, True],
-            "expand_synonyms": [False, True],
+            "use_stemming": [True, False],
+            "remove_stopwords": [True, False],
+            "expand_synonyms": [True, False],
             "cutoff": [0.0, 0.3, 0.5, 0.7, 0.9],
             "similarity": [SearchEngineConfig.COSINE, SearchEngineConfig.DOT_PRODUCT, SearchEngineConfig.EUCLIDEAN]
         }
@@ -168,13 +168,12 @@ class TestSuite:
 
     def _convert_test_results(self, test_results):
         dataframe = pd.concat([pd.Series(test_result).to_frame().T for test_result in test_results])
-        statsDataframe = pd.json_normalize(dataframe["statistics"]).reset_index()
+        statsDataframe = pd.json_normalize(dataframe["statistics"])
         final_dataframe = pd.concat([dataframe.drop(["statistics"], axis=1).reset_index(), statsDataframe], axis=1)
         return final_dataframe
 
     def _summarize_test_results(self, df):
-        df.set_index("search_engine")
-        return df
+        return df.reset_index(drop=True)
 
     def searchQueryFromGroundTruth(self, query, gt_documents):
         actual_documentTitles = [document["identifier"].upper() for document in self.tribunaleDataLoader.documents]
@@ -210,7 +209,7 @@ class TestSuite:
                 print(bcolors.YELLOW + "Repeating test [reason: {}]".format(str(e)))
         final_df = pd.concat(all_dfs)
         summary = self._summarize_test_results(final_df)
-        summary.to_csv(output_file)
+        summary.to_csv(output_file, index=False)
         return summary
 
     def run_groundtruth_suite(self, test_suite_name):
