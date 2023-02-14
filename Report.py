@@ -27,7 +27,7 @@ class Report:
         self.summary.to_csv(self.save_path)
 
     def _summarize(self):
-        mean_stats = self.df.groupby(["search_engine", "config"]).mean().reset_index()
+        mean_stats = self.df.groupby(["search_engine", "config"]).mean(numeric_only=True).reset_index()
         configDataframe = pd.json_normalize(mean_stats["config"].map(eval)).reindex()
         final_df = pd.concat([mean_stats.drop(["config"], axis=1), configDataframe], axis=1)
         return final_df

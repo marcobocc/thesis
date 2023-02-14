@@ -204,9 +204,9 @@ class Tester:
                 all_dfs.append(df)
                 successful_iterations = successful_iterations + 1
                 if not (successful_iterations % 1):
-                    print(bcolors.GREEN + "Tests run: {} (out of {})".format(successful_iterations, iterations))
+                    print(bcolors.GREEN + "{}/{}: Successful".format(successful_iterations, iterations))
             except Exception as e:
-                print(bcolors.YELLOW + "Repeating test [reason: {}]".format(str(e)))
+                print(bcolors.YELLOW + "{}/{}: Repeating test [reason: {}]".format(successful_iterations, iterations, str(e)))
         final_df = pd.concat(all_dfs)
         summary = self._summarize_test_results(final_df)
         summary.to_csv(output_file, index=False)
